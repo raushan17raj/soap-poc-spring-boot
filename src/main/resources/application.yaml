@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: soap-poc
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/soap-poc
+    username: jbilling
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+      show-sql: true

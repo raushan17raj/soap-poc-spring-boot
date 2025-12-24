@@ -1,0 +1,80 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.0.1'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+description = 'Demo project for Spring Boot with soap'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+	jaxb
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-webservices'
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'org.postgresql:postgresql'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webservices-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	// JAXB (required since Java 11+)
+	implementation 'jakarta.xml.bind:jakarta.xml.bind-api'
+	runtimeOnly 'org.glassfish.jaxb:jaxb-runtime'
+
+	// REQUIRED for WSDL generation
+	implementation 'wsdl4j:wsdl4j:1.6.3'
+
+	// XJC tool
+	jaxb 'org.glassfish.jaxb:jaxb-xjc'
+}
+
+def generatedDir = layout.buildDirectory.dir("generated/sources/jaxb")
+
+tasks.register('generateJaxb') {
+	outputs.dir(generatedDir)
+
+	doLast {
+		ant.taskdef(
+				name: 'xjc',
+				classname: 'com.sun.tools.xjc.XJCTask',
+				classpath: configurations.jaxb.asPath
+		)
+
+		ant.xjc(
+				schema: file("src/main/resources/user.xsd"),
+				destdir: generatedDir.get().asFile,
+				package: "com.example.soap.gen"
+		)
+	}
+}
+
+sourceSets {
+	main {
+		java {
+			srcDir(generatedDir)
+		}
+	}
+}
+
+
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
